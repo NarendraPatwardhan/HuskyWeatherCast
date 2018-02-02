@@ -1,0 +1,8 @@
+prefix=/home/robotics/Desktop/project-1/catkin_workspace/install
+
+Name: project_weather_x
+Description: Description of project_weather_x
+Version: 0.0.0
+Cflags: -I/home/robotics/Desktop/project-1/catkin_workspace/install/include
+Libs: -L/home/robotics/Desktop/project-1/catkin_workspace/install/lib 
+Requires: roscpp rospy std_msgs message_runtime

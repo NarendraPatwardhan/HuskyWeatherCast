@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+from __future__ import division
+from project_weather.srv import Weather,WeatherResponse
+import os
+import rospy
+import numpy as np
+import urllib2
+import cv2
+import json
+
+
+def handle_weather(req):
+    print "Returning weather data for zipcode [%s]"%(req)
+    return WeatherResponse(showWeather(processWeather(getWeather(int(req.zip_code)))))
+
+def weather_server():
+    rospy.init_node('weather_server')
+    s = rospy.Service('weather', Weather, handle_weather)
+    print "Ready to get weather data."
+    rospy.spin()
+
+def getWeather(zip_code):
+    api_key = '4cfea3182851aa1f0e3cccde3d991277'
+    api_string = 'http://api.openweathermap.org/data/2.5/weather?zip='
+    full_api_string = api_string + str(zip_code) + '&mode=json&units=imperial&APPID=' + api_key
+    url = urllib2.urlopen(full_api_string)
+    output = url.read().decode('utf-8')
+    weather_data = json.loads(output)
+    url.close()
+    return weather_data
+def processWeather(weather_data):
+    dayOrNight = 0 if (weather_data['dt']>weather_data['sys']['sunset']) else 1
+    weather_dict = {
+        'city': weather_data['name'],
+        'temperature': int(weather_data['main']['temp']),
+        'day_or_night': dayOrNight}
+    return weather_dict
+def showWeather(weather_dict):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    sky = cv2.imread(dir_path+'/SkyBackground.jpg',cv2.IMREAD_UNCHANGED)[300:700,400:700,:]/255
+    icons = cv2.imread(dir_path+'/Weather Icons3.jpg',cv2.IMREAD_UNCHANGED)
+    icons = icons[15:365,115:465]
+    icon_set = split_image(icons,7,7,50)
+    sunIndex = 5 if (weather_dict['day_or_night'] == 0) else 0
+    canvas = np.ones((400,300,3))-0.01
+    cv2.putText(canvas,"Hello "+weather_dict['city']+' :)', (80,20), cv2.FONT_HERSHEY_DUPLEX, 0.5, 0,thickness = 2)
+    canvas[50:100,50:100,:] = icon_set[sunIndex]
+    if (weather_dict['temperature']>41):
+        canvas[200:250,125:175,:] = icon_set[2]
+	cv2.putText(canvas,"enjoy the weather,lucky punks", (20,270), cv2.FONT_HERSHEY_DUPLEX, 0.5, 0,thickness = 2)
+    elif (weather_dict['temperature']<41):
+	canvas[200:250,125:175,:] = icon_set[35]
+	cv2.putText(canvas,"but you better wear a snowjacket", (20,270), cv2.FONT_HERSHEY_DUPLEX, 0.5, 0,thickness = 2)
+    timeString = 'Carpe Diem' if (weather_dict['day_or_night'] == 1) else 'Carpe Noctum'
+    cv2.putText(canvas,timeString, (120,80), cv2.FONT_HERSHEY_DUPLEX, 0.5, 0,thickness = 2)
+    posOrNeg = 100 if (weather_dict['temperature']>0) else 50
+    cv2.putText(canvas,str(weather_dict['temperature'])+"F", (posOrNeg,175), cv2.FONT_HERSHEY_DUPLEX, 2, 0,thickness = 2)
+    appImage = cv2.addWeighted(canvas,0.7,sky,0.3,0)
+    appImageScaled = cv2.resize(appImage,None,fx=1.5,fy=1.5,interpolation = cv2.INTER_CUBIC)
+    cv2.imshow('Husky Weather App',appImageScaled)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    return weather_dict['temperature']
+def split_image(img,vparts,hparts,size):
+    images = []
+    for i in range(vparts):
+        for j in range(hparts):
+            images.append(img[i*size:(i+1)*size,j*size:(j+1)*size]/255)
+    return images
+if __name__ == "__main__":
+    weather_server()
+
+

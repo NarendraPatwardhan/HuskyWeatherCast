@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/robotics/Desktop/project-1/catkin_workspace/install/setup.sh

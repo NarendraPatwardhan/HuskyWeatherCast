@@ -1,0 +1,2 @@
+project_weather_x
+-DCATKIN_DEVEL_PREFIX=/home/robotics/Desktop/project-1/catkin_workspace/devel -DCMAKE_INSTALL_PREFIX=/home/robotics/Desktop/project-1/catkin_workspace/install -G Unix Makefiles
